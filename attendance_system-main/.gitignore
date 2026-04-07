@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.pyc
+
+# Environment
+.env
+
+# Sensitive files
+src/client_secrets.json
+src/token.json
+
+# Data files
+data/
+logs/
+*.pickle
