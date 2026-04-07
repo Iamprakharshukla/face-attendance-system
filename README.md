@@ -59,7 +59,7 @@ attendance_system/
 ### 1️⃣ Clone Repository
 
 ```
-git clone https://github.com/yourusername/face-attendance-system.git
+git clone https://github.com/Iamprakharshukla/face-attendance-system.git
 cd face-attendance-system
 ```
 
