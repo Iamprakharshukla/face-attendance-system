@@ -1,0 +1,113 @@
+"""
+Quick Start Guide for AI Attendance System
+"""
+
+# QUICK START GUIDE
+
+## Step 1: Installation
+Follow these steps to get the system running:
+
+1. Install Python 3.8 or higher
+2. Navigate to the project directory
+3. Create virtual environment: `python -m venv venv`
+4. Activate it:
+   - Windows: `venv\Scripts\activate`
+   - macOS/Linux: `source venv/bin/activate`
+5. Install dependencies: `pip install -r requirements.txt`
+
+## Step 2: Configuration
+1. Copy .env.example to .env
+2. Update email settings in .env:
+   - MAIL_USERNAME: your email
+   - MAIL_PASSWORD: your app password
+   - ORGANIZATION_EMAIL: where to send reports
+
+## Step 3: Run the Application
+1. Execute: `python run.py`
+2. Open browser: http://localhost:5000
+3. You should see the home page
+
+## Step 4: Register People
+1. Go to "Register" page
+2. Enter person name
+3. Upload a photo or video with clear facial images
+4. System automatically extracts face encodings
+5. Person is registered and ready for recognition
+
+## Step 5: Use the System
+
+### Option 1: Live Webcam
+1. Click "Webcam" in navbar
+2. System automatically recognizes registered faces
+3. Check dashboard for attendance records
+
+### Option 2: IP Camera
+1. Click "IP Camera" in navbar
+2. Enter IP camera URL (e.g., http://192.168.1.100:8080)
+3. Start stream for real-time detection
+
+### Option 3: Upload Media
+1. Click "Upload" in navbar
+2. Upload photos/videos
+3. System analyzes and records detections
+
+### Option 4: Dashboard
+1. Click "Dashboard" to view attendance
+2. Filter by date range
+3. Export reports as CSV
+4. Send reports via email
+
+## Troubleshooting
+
+### Issue: No faces detected
+- Ensure good lighting
+- Face should be clearly visible (500px+)
+- Try uploading higher quality images
+
+### Issue: Face recognition not working well
+- Register multiple photos of each person from different angles
+- Ensure FACE_DISTANCE_THRESHOLD in config.py is appropriate
+
+### Issue: Email not sending
+- Check .env file has correct SMTP credentials
+- Enable "Less secure apps" if using Gmail
+- Verify firewall isn't blocking SMTP port 587
+
+### Issue: Camera not working
+- Check webcam permissions
+- Try different camera index in code
+- Ensure no other app is using your webcam
+
+## Project Structure
+- templates/ - HTML pages
+- static/css/ - Stylesheets
+- utils/ - Backend utilities
+- data/ - Storage for embeddings and uploads
+- config.py - Configuration settings
+
+## Key Files
+- run.py - Start the application
+- app/routes.py - All API routes
+- utils/face_recognition_engine.py - Face recognition logic
+- config.py - Configuration
+
+## Performance Tips
+1. Use 'hog' model for speed, 'cnn' for accuracy
+2. Reduce video resolution for real-time processing
+3. Process every 5th frame for videos
+4. Use GPU if available
+
+## Security Notes
+- Change SECRET_KEY in config.py for production
+- Never commit .env file to version control
+- Use HTTPS in production
+- Restrict database access
+
+## Next Steps
+- Customize styles in app/static/css/styles.css
+- Add database integration (PostgreSQL/MongoDB)
+- Implement multi-user authentication
+- Add mobile app
+- Deploy to cloud server
+
+Happy attendance tracking! ✨

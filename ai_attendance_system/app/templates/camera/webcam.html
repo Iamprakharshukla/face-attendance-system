@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webcam - AI Attendance System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">
+                <i class="fas fa-face-recognition"></i>
+                AI Attendance System
+            </div>
+            <ul class="navbar-menu">
+                <li><a href="/">Home</a></li>
+                <li><a href="/dashboard">Dashboard</a></li>
+                <li><a href="/register">Register</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1 style="margin-bottom: 2rem; color: var(--text-dark);">
+            <i class="fas fa-video"></i> Live Webcam Feed
+        </h1>
+
+        <div class="grid grid-2" style="gap: 2rem;">
+            <!-- Video Feed -->
+            <div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Live Stream</h3>
+                    </div>
+                    <div class="card-body" style="padding: 0;">
+                        <div class="video-container">
+                            <img id="webcamFeed" src="{{ url_for('camera.stream') }}" alt="Webcam Feed" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;">
+                            <div style="position: absolute; top: 10px; right: 10px; background: rgba(0, 0, 0, 0.5); color: white; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem;">
+                                <i class="fas fa-circle" style="color: #48bb78;"></i> LIVE
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div>
+                <div class="card" style="margin-bottom: 1.5rem;">
+                    <div class="card-header">
+                        <h3>Controls</h3>
+                    </div>
+                    <div class="card-body">
+                        <p style="color: var(--text-light); margin-bottom: 1.5rem;">
+                            Real-time face detection and recognition from your webcam.
+                        </p>
+
+                        <div class="form-group">
+                            <label>Camera Status</label>
+                            <div style="padding: 1rem; background: var(--light-bg); border-radius: 8px; border-left: 4px solid var(--success-color);">
+                                <p style="margin: 0;">
+                                    <i class="fas fa-circle" style="color: var(--success-color);"></i>
+                                    <strong>Active</strong> - Streaming and recognizing faces
+                                </p>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-danger btn-block" onclick="stopStream()">
+                            <i class="fas fa-stop"></i> Stop Stream
+                        </button>
+
+                        <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border-color);">
+
+                        <h4>Quick Actions</h4>
+                        <button class="btn btn-primary btn-block" onclick="captureFrame()">
+                            <i class="fas fa-camera"></i> Capture Frame
+                        </button>
+                        <button class="btn btn-secondary btn-block" style="margin-top: 0.5rem;" onclick="goToDashboard()">
+                            <i class="fas fa-chart-line"></i> View Dashboard
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Session Statistics</h3>
+                    </div>
+                    <div class="card-body">
+                        <div style="padding: 0.75rem 0; border-bottom: 1px solid var(--border-color);">
+                            <small style="color: var(--text-light);">Faces Detected</small>
+                            <p style="margin: 0; font-size: 1.5rem; font-weight: bold; color: var(--primary-color);" id="facesDetected">0</p>
+                        </div>
+                        <div style="padding: 0.75rem 0; border-bottom: 1px solid var(--border-color);">
+                            <small style="color: var(--text-light);">Known Faces</small>
+                            <p style="margin: 0; font-size: 1.5rem; font-weight: bold; color: var(--success-color);" id="knownFaces">0</p>
+                        </div>
+                        <div style="padding: 0.75rem 0;">
+                            <small style="color: var(--text-light);">Unknown Faces</small>
+                            <p style="margin: 0; font-size: 1.5rem; font-weight: bold; color: var(--danger-color);" id="unknownFaces">0</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Detections -->
+        <div class="card" style="margin-top: 2rem;">
+            <div class="card-header">
+                <h3>Recent Detections</h3>
+            </div>
+            <div class="card-body">
+                <div id="recentDetections">
+                    <p style="text-align: center; color: var(--text-light);">No detections yet</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let facesDetectedCount = 0;
+        let knownFacesCount = 0;
+        let unknownFacesCount = 0;
+        let recentDetections = [];
+
+        // Update stats every 2 seconds
+        setInterval(async () => {
+            try {
+                const response = await fetch('/admin/today-attendance');
+                const data = await response.json();
+                
+                const known = data.records.filter(r => r.Person_Name !== 'Unknown').length;
+                const unknown = data.records.filter(r => r.Person_Name === 'Unknown').length;
+
+                document.getElementById('facesDetected').textContent = data.records.length;
+                document.getElementById('knownFaces').textContent = known;
+                document.getElementById('unknownFaces').textContent = unknown;
+
+                // Update recent detections
+                if (data.records.length > 0) {
+                    const recent = data.records.slice(-5).reverse();
+                    document.getElementById('recentDetections').innerHTML = recent.map(r => `
+                        <div style="padding: 0.75rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                ${r.Person_Name === 'Unknown' 
+                                    ? '<i class="fas fa-user-secret" style="color: var(--danger-color);"></i> Unknown' 
+                                    : '<i class="fas fa-user-check" style="color: var(--success-color);"></i> ' + r.Person_Name}
+                            </div>
+                            <small style="color: var(--text-light);">${r.Time}</small>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error updating stats:', error);
+            }
+        }, 2000);
+
+        function stopStream() {
+            fetch('/camera/stop-stream', { method: 'POST' });
+            alert('Stream stopped');
+        }
+
+        function captureFrame() {
+            alert('Frame captured! Check dashboard for details.');
+        }
+
+        function goToDashboard() {
+            window.location.href = '/dashboard';
+        }
+    </script>
+</body>
+</html>

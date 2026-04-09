@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Media - AI Attendance System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">
+                <i class="fas fa-face-recognition"></i>
+                AI Attendance System
+            </div>
+            <ul class="navbar-menu">
+                <li><a href="/">Home</a></li>
+                <li><a href="/dashboard">Dashboard</a></li>
+                <li><a href="/register">Register</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container" style="max-width: 1000px;">
+        <h1 style="margin-bottom: 2rem; color: var(--text-dark);">
+            <i class="fas fa-cloud-upload-alt"></i> Upload Media for Analysis
+        </h1>
+
+        <div class="grid grid-2" style="gap: 2rem;">
+            <!-- Photo Upload -->
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-image"></i> Upload Photo</h3>
+                </div>
+                <div class="card-body">
+                    <p style="color: var(--text-light); margin-bottom: 1.5rem;">
+                        Upload a photo to detect and recognize faces. Photos are analyzed for known and unknown faces.
+                    </p>
+
+                    <div class="file-upload-area" id="photoUploadArea">
+                        <div class="file-upload-icon">
+                            <i class="fas fa-image"></i>
+                        </div>
+                        <div class="file-upload-text">
+                            <p><strong>Click to upload</strong> or drag and drop</p>
+                            <p>PNG, JPG, JPEG, GIF (Max 500MB)</p>
+                        </div>
+                        <input type="file" id="photoInput" accept=".png,.jpg,.jpeg,.gif" style="display: none;">
+                    </div>
+
+                    <div id="photoPreview" style="margin-top: 1rem; display: none;">
+                        <img id="photoPreviewImg" src="" alt="Preview" style="max-width: 100%; border-radius: 8px;">
+                        <button type="button" class="btn btn-secondary btn-block" onclick="clearPhoto()" style="margin-top: 0.5rem;">
+                            <i class="fas fa-trash"></i> Clear
+                        </button>
+                    </div>
+
+                    <button class="btn btn-success btn-block" onclick="analyzePhoto()" id="analyzePhotoBtn" style="margin-top: 1rem; display: none;">
+                        <i class="fas fa-search"></i> Analyze Photo
+                    </button>
+
+                    <div id="photoStatus" style="margin-top: 1rem;"></div>
+                </div>
+            </div>
+
+            <!-- Video Upload -->
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-video"></i> Upload Video</h3>
+                </div>
+                <div class="card-body">
+                    <p style="color: var(--text-light); margin-bottom: 1.5rem;">
+                        Upload a video to extract frames and analyze all detected faces. Videos are sampled every 5 frames.
+                    </p>
+
+                    <div class="file-upload-area" id="videoUploadArea">
+                        <div class="file-upload-icon">
+                            <i class="fas fa-video"></i>
+                        </div>
+                        <div class="file-upload-text">
+                            <p><strong>Click to upload</strong> or drag and drop</p>
+                            <p>MP4, AVI, MOV, MKV (Max 500MB)</p>
+                        </div>
+                        <input type="file" id="videoInput" accept=".mp4,.avi,.mov,.mkv" style="display: none;">
+                    </div>
+
+                    <div id="videoPreview" style="margin-top: 1rem; display: none;">
+                        <div style="background: var(--light-bg); padding: 1rem; border-radius: 8px; text-align: center;">
+                            <i class="fas fa-check-circle" style="color: var(--success-color); font-size: 1.5rem;"></i>
+                            <p style="margin: 0.5rem 0 0 0;"><strong>Video Selected</strong></p>
+                        </div>
+                        <button type="button" class="btn btn-secondary btn-block" onclick="clearVideo()" style="margin-top: 0.5rem;">
+                            <i class="fas fa-trash"></i> Clear
+                        </button>
+                    </div>
+
+                    <button class="btn btn-success btn-block" onclick="analyzeVideo()" id="analyzeVideoBtn" style="margin-top: 1rem; display: none;">
+                        <i class="fas fa-search"></i> Analyze Video
+                    </button>
+
+                    <div id="videoStatus" style="margin-top: 1rem;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analysis Results -->
+        <div class="card" style="margin-top: 2rem;">
+            <div class="card-header">
+                <h3><i class="fas fa-chart-bar"></i> Analysis Results</h3>
+            </div>
+            <div class="card-body">
+                <div id="resultsContent" style="text-align: center; color: var(--text-light);">
+                    <i class="fas fa-inbox" style="font-size: 3rem; opacity: 0.5; margin-bottom: 1rem;"></i>
+                    <p>No analysis results yet. Upload and analyze media to see results.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Photo upload
+        const photoUploadArea = document.getElementById('photoUploadArea');
+        const photoInput = document.getElementById('photoInput');
+
+        photoUploadArea.addEventListener('click', () => photoInput.click());
+        photoUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            photoUploadArea.classList.add('dragover');
+        });
+        photoUploadArea.addEventListener('dragleave', () => {
+            photoUploadArea.classList.remove('dragover');
+        });
+        photoUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            photoUploadArea.classList.remove('dragover');
+            handlePhotoFiles(e.dataTransfer.files);
+        });
+
+        photoInput.addEventListener('change', (e) => {
+            handlePhotoFiles(e.target.files);
+        });
+
+        // Video upload
+        const videoUploadArea = document.getElementById('videoUploadArea');
+        const videoInput = document.getElementById('videoInput');
+
+        videoUploadArea.addEventListener('click', () => videoInput.click());
+        videoUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            videoUploadArea.classList.add('dragover');
+        });
+        videoUploadArea.addEventListener('dragleave', () => {
+            videoUploadArea.classList.remove('dragover');
+        });
+        videoUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            videoUploadArea.classList.remove('dragover');
+            handleVideoFiles(e.dataTransfer.files);
+        });
+
+        videoInput.addEventListener('change', (e) => {
+            handleVideoFiles(e.target.files);
+        });
+
+        function handlePhotoFiles(files) {
+            if (files.length > 0) {
+                const file = files[0];
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.getElementById('photoPreviewImg').src = e.target.result;
+                    document.getElementById('photoPreview').style.display = 'block';
+                    document.getElementById('analyzePhotoBtn').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function handleVideoFiles(files) {
+            if (files.length > 0) {
+                document.getElementById('videoPreview').style.display = 'block';
+                document.getElementById('analyzeVideoBtn').style.display = 'block';
+            }
+        }
+
+        function clearPhoto() {
+            photoInput.value = '';
+            document.getElementById('photoPreview').style.display = 'none';
+            document.getElementById('analyzePhotoBtn').style.display = 'none';
+        }
+
+        function clearVideo() {
+            videoInput.value = '';
+            document.getElementById('videoPreview').style.display = 'none';
+            document.getElementById('analyzeVideoBtn').style.display = 'none';
+        }
+
+        async function analyzePhoto() {
+            const file = photoInput.files[0];
+            if (!file) {
+                showPhotoStatus('Please select a photo', 'danger');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('person_name', 'Unknown');
+
+            showPhotoStatus('Analyzing photo...', 'info');
+
+            try {
+                const response = await fetch('/upload/photo', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    showPhotoStatus(`Success! ${data.faces_detected} face(s) detected.`, 'success');
+                    displayResults(data.faces_detected, null, 'photo');
+                } else {
+                    showPhotoStatus('Error: ' + data.error, 'danger');
+                }
+            } catch (error) {
+                showPhotoStatus('Error: ' + error, 'danger');
+            }
+        }
+
+        async function analyzeVideo() {
+            const file = videoInput.files[0];
+            if (!file) {
+                showVideoStatus('Please select a video', 'danger');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('person_name', 'Unknown');
+
+            showVideoStatus('Analyzing video...', 'info');
+
+            try {
+                const response = await fetch('/upload/video', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    showVideoStatus(`Success! ${data.total_faces} face(s) detected in ${data.message}.`, 'success');
+                    displayResults(data.total_faces, data.video_duration, 'video');
+                } else {
+                    showVideoStatus('Error: ' + data.error, 'danger');
+                }
+            } catch (error) {
+                showVideoStatus('Error: ' + error, 'danger');
+            }
+        }
+
+        function showPhotoStatus(message, type) {
+            const statusDiv = document.getElementById('photoStatus');
+            statusDiv.innerHTML = `<div class="alert alert-${type}"><i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : 'info-circle'}"></i> ${message}</div>`;
+        }
+
+        function showVideoStatus(message, type) {
+            const statusDiv = document.getElementById('videoStatus');
+            statusDiv.innerHTML = `<div class="alert alert-${type}"><i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : 'info-circle'}"></i> ${message}</div>`;
+        }
+
+        function displayResults(totalFaces, duration, type) {
+            const resultsContent = document.getElementById('resultsContent');
+            const resultsHtml = `
+                <div style="text-align: center;">
+                    <div class="grid grid-3" style="margin: 1rem 0;">
+                        <div class="stat-box">
+                            <i class="fas fa-${type === 'photo' ? 'image' : 'video'}" style="font-size: 2rem; color: var(--primary-color);"></i>
+                            <div class="stat-number">${type === 'photo' ? 'Photo' : 'Video'}</div>
+                            <div class="stat-label">Analyzed</div>
+                        </div>
+                        <div class="stat-box">
+                            <i class="fas fa-face-smile" style="font-size: 2rem; color: var(--success-color);"></i>
+                            <div class="stat-number">${totalFaces}</div>
+                            <div class="stat-label">Faces Detected</div>
+                        </div>
+                        ${duration ? `<div class="stat-box">
+                            <i class="fas fa-clock" style="font-size: 2rem; color: var(--warning-color);"></i>
+                            <div class="stat-number">${Math.round(duration)}s</div>
+                            <div class="stat-label">Duration</div>
+                        </div>` : ''}
+                    </div>
+                    <button class="btn btn-primary" onclick="goToDashboard()">
+                        <i class="fas fa-chart-line"></i> View Full Dashboard
+                    </button>
+                </div>
+            `;
+            resultsContent.innerHTML = resultsHtml;
+        }
+
+        function goToDashboard() {
+            window.location.href = '/dashboard';
+        }
+    </script>
+</body>
+</html>

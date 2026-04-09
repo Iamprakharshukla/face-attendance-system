@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Attendance System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">
+                <i class="fas fa-face-recognition"></i>
+                AI Attendance System
+            </div>
+            <ul class="navbar-menu">
+                <li><a href="/">Home</a></li>
+                <li><a href="/dashboard">Dashboard</a></li>
+                <li><a href="/register">Register</a></li>
+                <li><a href="/camera/webcam">Webcam</a></li>
+                <li><a href="/camera/ipcam">IP Camera</a></li>
+                <li><a href="/upload">Upload</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="container">
+        <div class="hero">
+            <div class="hero-content">
+                <h1><i class="fas fa-smile"></i> Welcome to AI Attendance System</h1>
+                <p>
+                    Advanced facial recognition technology for automated attendance tracking. 
+                    Track attendance from webcam, IP camera, or uploaded media in real-time.
+                </p>
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                    <a href="/camera/webcam" class="btn btn-primary btn-lg">
+                        <i class="fas fa-video"></i> Start Webcam
+                    </a>
+                    <a href="/upload" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-upload"></i> Upload Media
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Grid -->
+        <h2 style="margin-bottom: 2rem; color: var(--text-dark);">Features</h2>
+        <div class="grid grid-3">
+            <a href="/camera/webcam" class="card card-link">
+                <div class="card-body" style="text-align: center;">
+                    <div style="font-size: 3rem; color: var(--primary-color); margin-bottom: 1rem;">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                    <h3>Live Webcam</h3>
+                    <p>Real-time face detection and recognition using your computer's webcam.</p>
+                </div>
+            </a>
+
+            <a href="/camera/ipcam" class="card card-link">
+                <div class="card-body" style="text-align: center;">
+                    <div style="font-size: 3rem; color: var(--success-color); margin-bottom: 1rem;">
+                        <i class="fas fa-wifi"></i>
+                    </div>
+                    <h3>IP Camera</h3>
+                    <p>Connect to IP cameras including phone cameras for surveillance.</p>
+                </div>
+            </a>
+
+            <a href="/upload" class="card card-link">
+                <div class="card-body" style="text-align: center;">
+                    <div style="font-size: 3rem; color: var(--secondary-color); margin-bottom: 1rem;">
+                        <i class="fas fa-upload"></i>
+                    </div>
+                    <h3>Media Upload</h3>
+                    <p>Upload photos and videos for batch processing and analysis.</p>
+                </div>
+            </a>
+
+            <a href="/register" class="card card-link">
+                <div class="card-body" style="text-align: center;">
+                    <div style="font-size: 3rem; color: var(--warning-color); margin-bottom: 1rem;">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                    <h3>Person Registration</h3>
+                    <p>Register known individuals for automatic recognition.</p>
+                </div>
+            </a>
+
+            <a href="/dashboard" class="card card-link">
+                <div class="card-body" style="text-align: center;">
+                    <div style="font-size: 3rem; color: var(--danger-color); margin-bottom: 1rem;">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <h3>Reports</h3>
+                    <p>Generate and export attendance reports with detailed statistics.</p>
+                </div>
+            </a>
+
+            <a href="/email/send-report" class="card card-link">
+                <div class="card-body" style="text-align: center;">
+                    <div style="font-size: 3rem; color: #118ab2; margin-bottom: 1rem;">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <h3>Email Reports</h3>
+                    <p>Send attendance reports directly to organization email.</p>
+                </div>
+            </a>
+        </div>
+
+        <!-- Quick Stats -->
+        <h2 style="margin-top: 3rem; margin-bottom: 2rem; color: var(--text-dark);">Quick Stats</h2>
+        <div class="grid grid-4">
+            <div class="stat-box">
+                <i class="fas fa-users" style="font-size: 2rem; color: var(--primary-color);"></i>
+                <div class="stat-number" id="totalKnownPeople">-</div>
+                <div class="stat-label">Known People</div>
+            </div>
+            <div class="stat-box">
+                <i class="fas fa-check" style="font-size: 2rem; color: var(--success-color);"></i>
+                <div class="stat-number" id="todayPresent">-</div>
+                <div class="stat-label">Present Today</div>
+            </div>
+            <div class="stat-box">
+                <i class="fas fa-user-secret" style="font-size: 2rem; color: var(--danger-color);"></i>
+                <div class="stat-number" id="unknownFaces">-</div>
+                <div class="stat-label">Unknown Faces</div>
+            </div>
+            <div class="stat-box">
+                <i class="fas fa-clock" style="font-size: 2rem; color: var(--warning-color);"></i>
+                <div class="stat-number" id="systemStatus">Online</div>
+                <div class="stat-label">System Status</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load stats on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchStats();
+        });
+
+        async function fetchStats() {
+            try {
+                // Get known people
+                const peopleRes = await fetch('/admin/known-people');
+                const peopleData = await peopleRes.json();
+                document.getElementById('totalKnownPeople').textContent = peopleData.people.length;
+
+                // Get today's attendance
+                const attendanceRes = await fetch('/admin/today-attendance');
+                const attendanceData = await attendanceRes.json();
+                const present = attendanceData.records.filter(r => r.Person_Name !== 'Unknown').length;
+                const unknown = attendanceData.records.filter(r => r.Person_Name === 'Unknown').length;
+                
+                document.getElementById('todayPresent').textContent = present;
+                document.getElementById('unknownFaces').textContent = unknown;
+            } catch (error) {
+                console.error('Error fetching stats:', error);
+            }
+        }
+    </script>
+</body>
+</html>

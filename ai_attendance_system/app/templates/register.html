@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Person - AI Attendance System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">
+                <i class="fas fa-face-recognition"></i>
+                AI Attendance System
+            </div>
+            <ul class="navbar-menu">
+                <li><a href="/">Home</a></li>
+                <li><a href="/dashboard">Dashboard</a></li>
+                <li><a href="/register">Register</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container" style="max-width: 800px;">
+        <h1 style="margin-bottom: 2rem; color: var(--text-dark);">
+            <i class="fas fa-user-plus"></i> Register New Person
+        </h1>
+
+        <div class="card">
+            <div class="card-header">
+                <h3>Add Known Face</h3>
+            </div>
+            <div class="card-body">
+                <p style="color: var(--text-light); margin-bottom: 1.5rem;">
+                    Register a person by uploading a photo or video. The system will extract face encodings for future recognition.
+                </p>
+
+                <!-- Form -->
+                <div class="form-group">
+                    <label>Person Name *</label>
+                    <input type="text" id="personName" placeholder="Enter full name" required>
+                </div>
+
+                <!-- Photo Upload -->
+                <div class="card" style="margin-bottom: 2rem; background: var(--light-bg); border: 1px solid var(--border-color);">
+                    <div class="card-body">
+                        <h4 style="margin-top: 0;">Upload Photo</h4>
+                        <div class="file-upload-area" id="photoUploadArea">
+                            <div class="file-upload-icon">
+                                <i class="fas fa-image"></i>
+                            </div>
+                            <div class="file-upload-text">
+                                <p><strong>Click to upload</strong> or drag and drop</p>
+                                <p>PNG, JPG, JPEG, GIF (Max 500MB)</p>
+                            </div>
+                            <input type="file" id="photoInput" accept=".png,.jpg,.jpeg,.gif" style="display: none;">
+                        </div>
+                        <div id="photoPreview" style="margin-top: 1rem; display: none;">
+                            <img id="photoPreviewImg" src="" alt="Preview" style="max-width: 100%; border-radius: 8px;">
+                            <button type="button" class="btn btn-secondary" onclick="clearPhotoSelection()" style="margin-top: 0.5rem;">
+                                <i class="fas fa-trash"></i> Clear
+                            </button>
+                        </div>
+                        <button class="btn btn-success btn-block" onclick="uploadPhoto()" id="uploadPhotoBtn" style="margin-top: 1rem; display: none;">
+                            <i class="fas fa-upload"></i> Upload Photo
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Video Upload -->
+                <div class="card" style="background: var(--light-bg); border: 1px solid var(--border-color);">
+                    <div class="card-body">
+                        <h4 style="margin-top: 0;">Or Upload Video</h4>
+                        <div class="file-upload-area" id="videoUploadArea">
+                            <div class="file-upload-icon">
+                                <i class="fas fa-video"></i>
+                            </div>
+                            <div class="file-upload-text">
+                                <p><strong>Click to upload</strong> or drag and drop</p>
+                                <p>MP4, AVI, MOV, MKV (Max 500MB)</p>
+                            </div>
+                            <input type="file" id="videoInput" accept=".mp4,.avi,.mov,.mkv" style="display: none;">
+                        </div>
+                        <div id="videoPreview" style="margin-top: 1rem; display: none;">
+                            <p><i class="fas fa-check-circle" style="color: var(--success-color);"></i> Video selected</p>
+                            <button type="button" class="btn btn-secondary" onclick="clearVideoSelection()">
+                                <i class="fas fa-trash"></i> Clear
+                            </button>
+                        </div>
+                        <button class="btn btn-success btn-block" onclick="uploadVideo()" id="uploadVideoBtn" style="margin-top: 1rem; display: none;">
+                            <i class="fas fa-upload"></i> Upload Video
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Status Message -->
+                <div id="statusMessage" style="margin-top: 1.5rem;"></div>
+            </div>
+        </div>
+
+        <!-- Known People List -->
+        <div class="card" style="margin-top: 2rem;">
+            <div class="card-header">
+                <h3>Registered People</h3>
+            </div>
+            <div class="card-body">
+                <div id="knownPeopleList">
+                    <p style="text-align: center; color: var(--text-light);">Loading...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get today's date
+        const today = new Date().toISOString().split('T')[0];
+
+        // File upload listeners
+        const photoUploadArea = document.getElementById('photoUploadArea');
+        const photoInput = document.getElementById('photoInput');
+        const videoUploadArea = document.getElementById('videoUploadArea');
+        const videoInput = document.getElementById('videoInput');
+
+        // Photo upload
+        photoUploadArea.addEventListener('click', () => photoInput.click());
+        photoUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            photoUploadArea.classList.add('dragover');
+        });
+        photoUploadArea.addEventListener('dragleave', () => {
+            photoUploadArea.classList.remove('dragover');
+        });
+        photoUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            photoUploadArea.classList.remove('dragover');
+            handlePhotoFiles(e.dataTransfer.files);
+        });
+
+        photoInput.addEventListener('change', (e) => {
+            handlePhotoFiles(e.target.files);
+        });
+
+        // Video upload
+        videoUploadArea.addEventListener('click', () => videoInput.click());
+        videoUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            videoUploadArea.classList.add('dragover');
+        });
+        videoUploadArea.addEventListener('dragleave', () => {
+            videoUploadArea.classList.remove('dragover');
+        });
+        videoUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            videoUploadArea.classList.remove('dragover');
+            handleVideoFiles(e.dataTransfer.files);
+        });
+
+        videoInput.addEventListener('change', (e) => {
+            handleVideoFiles(e.target.files);
+        });
+
+        function handlePhotoFiles(files) {
+            if (files.length > 0) {
+                const file = files[0];
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.getElementById('photoPreviewImg').src = e.target.result;
+                    document.getElementById('photoPreview').style.display = 'block';
+                    document.getElementById('uploadPhotoBtn').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function handleVideoFiles(files) {
+            if (files.length > 0) {
+                document.getElementById('videoPreview').style.display = 'block';
+                document.getElementById('uploadVideoBtn').style.display = 'block';
+            }
+        }
+
+        function clearPhotoSelection() {
+            photoInput.value = '';
+            document.getElementById('photoPreview').style.display = 'none';
+            document.getElementById('uploadPhotoBtn').style.display = 'none';
+        }
+
+        function clearVideoSelection() {
+            videoInput.value = '';
+            document.getElementById('videoPreview').style.display = 'none';
+            document.getElementById('uploadVideoBtn').style.display = 'none';
+        }
+
+        async function uploadPhoto() {
+            const personName = document.getElementById('personName').value;
+            if (!personName) {
+                showStatus('Please enter person name', 'danger');
+                return;
+            }
+
+            const file = photoInput.files[0];
+            if (!file) {
+                showStatus('Please select a photo', 'danger');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('person_name', personName);
+
+            showStatus('Uploading and processing...', 'info');
+
+            try {
+                const response = await fetch('/upload/photo', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    showStatus(`Success! ${data.faces_detected} face(s) detected.`, 'success');
+                    clearPhotoSelection();
+                    document.getElementById('personName').value = '';
+                    loadKnownPeople();
+                } else {
+                    showStatus('Error: ' + data.error, 'danger');
+                }
+            } catch (error) {
+                showStatus('Error: ' + error, 'danger');
+            }
+        }
+
+        async function uploadVideo() {
+            const personName = document.getElementById('personName').value;
+            if (!personName) {
+                showStatus('Please enter person name', 'danger');
+                return;
+            }
+
+            const file = videoInput.files[0];
+            if (!file) {
+                showStatus('Please select a video', 'danger');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('person_name', personName);
+
+            showStatus('Uploading and processing video...', 'info');
+
+            try {
+                const response = await fetch('/upload/video', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    showStatus(`Success! ${data.total_faces} face(s) detected in ${data.message}`, 'success');
+                    clearVideoSelection();
+                    document.getElementById('personName').value = '';
+                    loadKnownPeople();
+                } else {
+                    showStatus('Error: ' + data.error, 'danger');
+                }
+            } catch (error) {
+                showStatus('Error: ' + error, 'danger');
+            }
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.innerHTML = `<div class="alert alert-${type}"><i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : 'info-circle'}"></i> ${message}</div>`;
+        }
+
+        async function loadKnownPeople() {
+            try {
+                const response = await fetch('/admin/known-people');
+                const data = await response.json();
+                
+                if (data.people.length === 0) {
+                    document.getElementById('knownPeopleList').innerHTML = '<p style="text-align: center; color: var(--text-light);">No people registered yet</p>';
+                    return;
+                }
+
+                const html = data.people.map((person, index) => `
+                    <div style="padding: 1rem; border-bottom: ${index < data.people.length - 1 ? '1px solid var(--border-color)' : 'none'}; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <i class="fas fa-user-circle" style="margin-right: 0.5rem; color: var(--primary-color);"></i>
+                            <strong>${person}</strong>
+                        </div>
+                    </div>
+                `).join('');
+
+                document.getElementById('knownPeopleList').innerHTML = html;
+            } catch (error) {
+                console.error('Error loading known people:', error);
+            }
+        }
+
+        // Load known people on page load
+        document.addEventListener('DOMContentLoaded', loadKnownPeople);
+    </script>
+</body>
+</html>
