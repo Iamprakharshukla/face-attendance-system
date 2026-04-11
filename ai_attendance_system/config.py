@@ -44,7 +44,11 @@ SESSION_COOKIE_SAMESITE = 'Lax'
 
 # Logging Configuration
 LOG_FILE = os.path.join(BASE_DIR, 'attendance_system.log')
-LOG_LEVEL = 'INFO'
+LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')  # 'DEBUG', 'INFO', 'WARNING', 'ERROR'
+
+# Attendance Logging Configuration
+ATTENDANCE_DEDUP_INTERVAL = int(os.getenv('ATTENDANCE_DEDUP_INTERVAL', 60))  # Seconds between logging same person
+UNKNOWN_FACE_LOG_FREQUENCY = int(os.getenv('UNKNOWN_FACE_LOG_FREQUENCY', 10))  # Log every N frames
 
 # Create necessary directories
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)

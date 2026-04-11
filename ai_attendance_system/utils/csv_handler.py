@@ -1,10 +1,13 @@
 import csv
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# In-memory cache for recent attendance to prevent duplicates
+_attendance_cache = {}
 
 
 class CSVHandler:
@@ -40,13 +43,27 @@ class CSVHandler:
                 writer = csv.writer(f)
                 writer.writerow(['Person_Name', 'Registration_Date', 'Total_Attendance', 'Last_Seen'])
     
-    def log_attendance(self, person_name, confidence, source='webcam'):
+    def log_attendance(self, person_name, confidence, source='webcam', dedup_interval=60):
         """
-        Log attendance record
-        source: 'webcam', 'phone', 'upload', 'video'
+        Log attendance record with deduplication to prevent duplicate logging
+        dedup_interval: seconds to wait before logging the same person again (default 60)
         """
+        global _attendance_cache
+        
         try:
             now = datetime.now()
+            
+            # Check if person was logged recently
+            cache_key = f"{person_name}_{source}"
+            if cache_key in _attendance_cache:
+                last_logged = _attendance_cache[cache_key]
+                time_diff = (now - last_logged).total_seconds()
+                
+                if time_diff < dedup_interval:
+                    logger.debug(f"Skipped duplicate attendance for {person_name} (logged {time_diff:.0f}s ago)")
+                    return True  # Return True but don't log
+            
+            # Log the attendance
             date = now.strftime('%Y-%m-%d')
             time = now.strftime('%H:%M:%S')
             status = 'Present'
@@ -55,17 +72,25 @@ class CSVHandler:
                 writer = csv.writer(f)
                 writer.writerow([date, time, person_name, f'{confidence:.4f}', status, source])
             
-            logger.info(f"Logged attendance for {person_name}")
+            # Update cache
+            _attendance_cache[cache_key] = now
+            
+            logger.info(f"Logged attendance for {person_name} (confidence: {confidence:.2f})")
             return True
         except Exception as e:
             logger.error(f"Error logging attendance: {str(e)}")
             return False
     
-    def log_unknown_face(self, confidence, image_path, source='webcam'):
+    def log_unknown_face(self, confidence, image_path='', source='webcam'):
         """
-        Log unknown face detection
+        Log unknown face detection (only log significant detections)
         """
         try:
+            # Only log if confidence is above 0.5 to reduce noise
+            if confidence < 0.5:
+                logger.debug(f"Skipped low-confidence unknown face (confidence: {confidence:.4f})")
+                return True
+                
             now = datetime.now()
             date = now.strftime('%Y-%m-%d')
             time = now.strftime('%H:%M:%S')
@@ -74,7 +99,7 @@ class CSVHandler:
                 writer = csv.writer(f)
                 writer.writerow([date, time, f'{confidence:.4f}', image_path, source])
             
-            logger.info(f"Logged unknown face with confidence {confidence:.4f}")
+            logger.info(f"Detected unknown face (confidence: {confidence:.4f}, source: {source})")
             return True
         except Exception as e:
             logger.error(f"Error logging unknown face: {str(e)}")

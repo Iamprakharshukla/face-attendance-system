@@ -27,13 +27,13 @@ Step 2: Configure Environment
      copy .env.example .env
   
   2. Edit .env with your settings:
-     - MAIL_USERNAME = your-email@gmail.com
-     - MAIL_PASSWORD = your-app-password
+     - MAIL_USERNAME =08prince999@gmail.com
+     - MAIL_PASSWORD =dlrinnevimvogare
      - ORGANIZATION_EMAIL = admin@organization.com
   
   For Gmail:
   - Enable 2-factor authentication
-  - Generate App Password: https://myaccount.google.com/apppasswords
+  - Generate App Password: https://myaccount.google.com/a   pppasswords
   - Use the generated password in MAIL_PASSWORD
 
 
