@@ -133,6 +133,7 @@
     <script>
         let isStreaming = false;
         let startTime = null;
+        let lastRecordCount = 0;
 
         async function startIPStream() {
             const ipUrl = document.getElementById('ipUrl').value;
@@ -149,59 +150,72 @@
                 startTime = Date.now();
 
                 // Use IP stream endpoint
-                const streamUrl = '/camera/ip-stream';
+                const encodedUrl = encodeURIComponent(ipUrl);
+                const streamUrl = `/camera/ip-stream-display/${encodedUrl}`;
                 
-                fetch(streamUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        ip_url: ipUrl
-                    })
-                }).then(response => {
-                    if (response.ok) {
-                        document.getElementById('videoContainer').style.display = 'block';
-                        document.getElementById('placeholderMessage').style.display = 'none';
-                        
-                        // Create blob stream
-                        const reader = response.body.getReader();
-                        const stream = new ReadableStream({
-                            start(controller) {
-                                return pump();
-                                function pump() {
-                                    return reader.read().then(({ done, value }) => {
-                                        if (done) return;
-                                        controller.enqueue(value);
-                                        return pump();
-                                    });
-                                }
-                            }
-                        });
-
-                        showStatus('Connected successfully', 'success');
-                    } else {
-                        showStatus('Failed to connect to camera', 'danger');
+                // Set image source directly (like webcam)
+                const imgElement = document.getElementById('ipCameraFeed');
+                imgElement.src = streamUrl;
+                
+                // Wait for image to load
+                imgElement.onload = () => {
+                    document.getElementById('videoContainer').style.display = 'block';
+                    document.getElementById('placeholderMessage').style.display = 'none';
+                    showStatus('Connected successfully', 'success');
+                };
+                
+                imgElement.onerror = () => {
+                    showStatus('Failed to load stream - invalid URL or camera offline', 'danger');
+                    isStreaming = false;
+                    document.getElementById('videoContainer').style.display = 'none';
+                    document.getElementById('placeholderMessage').style.display = 'flex';
+                };
+                
+                // Fallback: if image doesn't load within 5 seconds, show error
+                const timeout = setTimeout(() => {
+                    if (document.getElementById('videoContainer').style.display === 'none') {
+                        showStatus('Connection timeout - check IP camera URL and network connection', 'danger');
                         isStreaming = false;
                     }
-                }).catch(error => {
-                    showStatus('Connection error: ' + error, 'danger');
-                    isStreaming = false;
-                });
+                }, 5000);
 
-                // Update connection time
-                setInterval(() => {
-                    if (isStreaming) {
-                        const elapsed = Math.floor((Date.now() - startTime) / 1000);
-                        const mins = Math.floor(elapsed / 60);
-                        const secs = elapsed % 60;
-                        document.getElementById('connectionTime').textContent = 
-                            `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-                    }
-                }, 1000);
+                // Start updating statistics
+                updateStatistics();
+                
             } catch (error) {
                 showStatus('Error: ' + error, 'danger');
             }
+        }
+
+        // Update statistics every 2 seconds
+        async function updateStatistics() {
+            const statsInterval = setInterval(async () => {
+                if (!isStreaming) {
+                    clearInterval(statsInterval);
+                    return;
+                }
+
+                try {
+                    // Update connection time
+                    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                    const mins = Math.floor(elapsed / 60);
+                    const secs = elapsed % 60;
+                    document.getElementById('connectionTime').textContent = 
+                        `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+                    // Fetch stream statistics
+                    const response = await fetch('/camera/stream-stats');
+                    const stats = await response.json();
+                    
+                    if (stats) {
+                        // Update counters with actual frame and face counts
+                        document.getElementById('frameCount').textContent = stats.frames_processed || 0;
+                        document.getElementById('recognizedCount').textContent = stats.faces_recognized || 0;
+                    }
+                } catch (error) {
+                    console.error('Error fetching statistics:', error);
+                }
+            }, 2000); // Update every 2 seconds
         }
 
         function showStatus(message, type) {

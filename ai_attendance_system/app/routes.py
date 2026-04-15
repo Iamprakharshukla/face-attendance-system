@@ -1,8 +1,13 @@
 import os
 import cv2
 import numpy as np
+
 from flask import Blueprint, render_template, request, jsonify, send_file, Response, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
+
+import urllib.parse
+
+
 from werkzeug.utils import secure_filename
 from datetime import datetime
 import logging
@@ -39,6 +44,14 @@ email_handler = EmailHandler(MAIL_SERVER, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWOR
 camera_running = False
 current_frame = None
 frame_lock = threading.Lock()
+
+# Global statistics for current stream
+stream_stats = {
+    'frames_processed': 0,
+    'faces_detected': 0,
+    'faces_recognized': 0
+}
+stats_lock = threading.Lock()
 
 
 # ==================== MAIN ROUTES ====================
@@ -95,13 +108,20 @@ def stream():
 
 
 def generate_frames():
-    """Generate frames from webcam"""
-    global camera_running, current_frame, frame_lock
+    """Generate frames from webcam with optimized logging"""
+    global camera_running, current_frame, frame_lock, stream_stats, stats_lock
     
     cap = cv2.VideoCapture(0)
     cap.set(cv2.CAP_PROP_FPS, 30)
     
     camera_running = True
+    frame_count = 0
+    
+    # Reset stats
+    with stats_lock:
+        stream_stats['frames_processed'] = 0
+        stream_stats['faces_detected'] = 0
+        stream_stats['faces_recognized'] = 0
     
     try:
         while camera_running:
@@ -111,6 +131,7 @@ def generate_frames():
             
             # Resize for faster processing
             frame = cv2.resize(frame, (640, 480))
+            frame_count += 1
             
             # Process frame for face recognition
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -118,18 +139,27 @@ def generate_frames():
             
             names = []
             confidences = []
+            faces_recognized_count = 0
             
             for face_encoding in face_encodings:
                 name, confidence = face_engine.recognize_faces(face_encoding)
                 names.append(name)
                 confidences.append(confidence)
                 
-                # Log attendance
+                # Count recognized faces
                 if name != "Unknown" and confidence > 0.5:
+                    faces_recognized_count += 1
+                    # Log attendance with deduplication
                     csv_handler.log_attendance(name, confidence, 'webcam')
                     csv_handler.update_person_record(name)
-                else:
-                    csv_handler.log_unknown_face(confidence, 'webcam')
+                elif frame_count % 10 == 0:  # Log unknown faces less frequently
+                    csv_handler.log_unknown_face(confidence, source='webcam')
+            
+            # Update statistics
+            with stats_lock:
+                stream_stats['frames_processed'] = frame_count
+                stream_stats['faces_detected'] += len(face_encodings)
+                stream_stats['faces_recognized'] += faces_recognized_count
             
             # Draw boxes on frame
             frame = draw_boxes_on_frame(frame, face_locations, names, confidences)
@@ -149,6 +179,22 @@ def generate_frames():
     finally:
         cap.release()
         camera_running = False
+        if frame_count > 0:
+            logger.debug(f"Webcam stream ended after processing {frame_count} frames")
+
+
+@camera_bp.route('/stream-stats')
+def get_stream_stats():
+    """Get current stream statistics"""
+    global stream_stats, stats_lock
+    
+    try:
+        with stats_lock:
+            stats = stream_stats.copy()
+        return jsonify(stats)
+    except Exception as e:
+        logger.error(f"Error getting stream stats: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 
 @camera_bp.route('/stop-stream', methods=['POST'])
@@ -159,47 +205,132 @@ def stop_stream():
     return jsonify({'status': 'stopped'})
 
 
+@camera_bp.route('/ip-stream-display/<path:encoded_url>')
+def ip_stream_display(encoded_url):
+    """Stream from IP Camera (GET endpoint for use in img src)"""
+    try:
+        ip_url = urllib.parse.unquote(encoded_url)
+        formatted_url = _format_ip_camera_url(ip_url)
+        logger.info(f"Starting IP camera stream (display) from: {formatted_url}")
+        return Response(generate_ip_frames(formatted_url),
+                       mimetype='multipart/x-mixed-replace; boundary=frame')
+    except Exception as e:
+        logger.error(f"Error in IP stream display: {str(e)}")
+        return jsonify({'error': str(e)}), 400
+
+
 @camera_bp.route('/ip-stream', methods=['POST'])
 def ip_stream():
     """Stream from IP Camera"""
-    ip_url = request.json.get('ip_url')
+    ip_url = request.json.get('ip_url', '').strip()
     
     if not ip_url:
+        logger.warning("IP stream request without URL")
         return jsonify({'error': 'IP URL required'}), 400
     
-    return Response(generate_ip_frames(ip_url),
+    # Format URL for RTSP if needed
+    formatted_url = _format_ip_camera_url(ip_url)
+    
+    logger.info(f"Starting IP camera stream from: {formatted_url}")
+    return Response(generate_ip_frames(formatted_url),
                    mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
+def _format_ip_camera_url(url):
+    """
+    Format IP camera URL to proper format
+    Supports multiple input formats:
+    - 192.168.1.37:8080/video -> http://192.168.1.37:8080/video
+    - rtsp://192.168.1.37:554/stream -> rtsp://192.168.1.37:554/stream
+    - http://192.168.1.37:8080 -> http://192.168.1.37:8080/video
+    """
+    url = url.strip()
+    
+    # If already has protocol, return as is
+    if url.startswith('rtsp://') or url.startswith('http://') or url.startswith('https://'):
+        return url
+    
+    # Common IP camera URL patterns
+    if ':8080' in url or ':8081' in url:
+        # Likely HTTP-MJPEG camera
+        if not url.startswith('http'):
+            return f"http://{url}"
+        return url
+    
+    # Check for RTSP pattern
+    if ':554' in url or '/stream' in url:
+        # Likely RTSP camera
+        if not url.startswith('rtsp'):
+            return f"rtsp://{url}"
+        return url
+    
+    # Default to HTTP
+    return f"http://{url}"
+
+
 def generate_ip_frames(ip_url):
-    """Generate frames from IP camera"""
-    global camera_running, current_frame, frame_lock
+    """Generate frames from IP camera with error handling"""
+    global camera_running, current_frame, frame_lock, stream_stats, stats_lock
     
     cap = cv2.VideoCapture(ip_url)
+    
+    # Check if camera opened successfully
+    if not cap.isOpened():
+        logger.error(f"Failed to open IP camera: {ip_url}")
+        return
+    
     camera_running = True
+    frame_count = 0
+    error_count = 0
+    max_errors = 5
+    
+    # Reset stats
+    with stats_lock:
+        stream_stats['frames_processed'] = 0
+        stream_stats['faces_detected'] = 0
+        stream_stats['faces_recognized'] = 0
     
     try:
-        while camera_running:
+        while camera_running and error_count < max_errors:
             ret, frame = cap.read()
+            
             if not ret:
-                break
+                error_count += 1
+                if error_count == 1:
+                    logger.warning(f"Failed to read frame from IP camera (attempt {error_count}/{max_errors})")
+                continue
+            
+            error_count = 0  # Reset error count on successful read
+            frame_count += 1
             
             frame = cv2.resize(frame, (640, 480))
             
-            # Process frame
+            # Process frame (reduced logging)
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             face_encodings, face_locations = face_engine.get_face_encodings_from_frame(frame)
             
             names = []
             confidences = []
+            faces_recognized_count = 0
             
             for face_encoding in face_encodings:
                 name, confidence = face_engine.recognize_faces(face_encoding)
                 names.append(name)
                 confidences.append(confidence)
                 
+                # Count recognized faces
                 if name != "Unknown" and confidence > 0.5:
+                    faces_recognized_count += 1
+                    # Log attendance with deduplication
                     csv_handler.log_attendance(name, confidence, 'ip_camera')
+                elif frame_count % 10 == 0:  # Log unknown faces less frequently
+                    csv_handler.log_unknown_face(confidence, source='ip_camera')
+            
+            # Update statistics
+            with stats_lock:
+                stream_stats['frames_processed'] = frame_count
+                stream_stats['faces_detected'] += len(face_encodings)
+                stream_stats['faces_recognized'] += faces_recognized_count
             
             frame = draw_boxes_on_frame(frame, face_locations, names, confidences)
             
@@ -213,9 +344,17 @@ def generate_ip_frames(ip_url):
                    b'Content-Type: image/jpeg\r\n'
                    b'Content-Length: ' + str(len(frame_bytes)).encode() + b'\r\n\r\n'
                    + frame_bytes + b'\r\n')
+        
+        if error_count >= max_errors:
+            logger.error(f"IP camera disconnected after {max_errors} failed read attempts")
+            
+    except Exception as e:
+        logger.error(f"Error in IP camera stream: {str(e)}")
     finally:
         cap.release()
         camera_running = False
+        if frame_count > 0:
+            logger.info(f"IP camera stream ended after processing {frame_count} frames")
 
 
 # ==================== UPLOAD ROUTES ====================

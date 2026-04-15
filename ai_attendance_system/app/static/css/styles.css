@@ -5,23 +5,23 @@
 }
 
 :root {
-    --primary-color: #667eea;
-    --secondary-color: #764ba2;
+    --primary-color: #0f3460;
+    --secondary-color: #000000;
     --success-color: #48bb78;
     --danger-color: #f56565;
     --warning-color: #ed8936;
     --light-bg: #f7fafc;
-    --dark-bg: #1a202c;
-    --text-dark: #2d3748;
-    --text-light: #718096;
-    --border-color: #e2e8f0;
-    --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.15);
+    --dark-bg: #0a0e27;
+    --text-dark: #ffffff;
+    --text-light: #b0b8c8;
+    --border-color: #1a3a60;
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.4);
 }
 
 html, body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: var(--light-bg);
+    background-color: #0a0e27;
     color: var(--text-dark);
 }
 
@@ -129,9 +129,9 @@ html, body {
 }
 
 .btn-primary:hover {
-    background-color: #5568d3;
+    background-color: #1a5a9f;
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 5px 15px rgba(15, 52, 96, 0.6);
 }
 
 .btn-secondary {
@@ -140,7 +140,7 @@ html, body {
 }
 
 .btn-secondary:hover {
-    background-color: #6a3d92;
+    background-color: #333333;
     transform: translateY(-2px);
 }
 
@@ -165,11 +165,12 @@ html, body {
 
 /* ============ CARDS ============ */
 .card, .card-link {
-    background: white;
+    background: #1a1f3a;
     border-radius: 12px;
     box-shadow: var(--shadow);
     overflow: hidden;
     transition: transform 0.3s, box-shadow 0.3s;
+    color: var(--text-dark);
 }
 
 .card-link {
@@ -201,7 +202,7 @@ html, body {
 .card-footer {
     padding: 1rem 1.5rem;
     border-top: 1px solid var(--border-color);
-    background: var(--light-bg);
+    background: #0f1428;
 }
 
 /* ============ GRID ============ */
@@ -245,6 +246,8 @@ html, body {
     font-size: 1rem;
     transition: border-color 0.3s;
     font-family: inherit;
+    background-color: #0f1428;
+    color: var(--text-dark);
 }
 
 .form-group input:focus,
@@ -252,7 +255,7 @@ html, body {
 .form-group textarea:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    box-shadow: 0 0 0 3px rgba(15, 52, 96, 0.2);
 }
 
 .form-group textarea {
@@ -267,7 +270,7 @@ html, body {
 }
 
 .table thead {
-    background-color: var(--light-bg);
+    background-color: #0f1428;
 }
 
 .table th {
@@ -275,15 +278,17 @@ html, body {
     text-align: left;
     font-weight: 600;
     border-bottom: 2px solid var(--border-color);
+    color: var(--text-dark);
 }
 
 .table td {
     padding: 1rem;
     border-bottom: 1px solid var(--border-color);
+    color: var(--text-dark);
 }
 
 .table tbody tr:hover {
-    background-color: var(--light-bg);
+    background-color: #1a1f3a;
 }
 
 /* ============ ALERTS ============ */
@@ -363,12 +368,13 @@ html, body {
 
 /* ============ STATS ============ */
 .stat-box {
-    background: white;
+    background: #1a1f3a;
     padding: 1.5rem;
     border-radius: 12px;
     box-shadow: var(--shadow);
     text-align: center;
     transition: transform 0.3s;
+    color: var(--text-dark);
 }
 
 .stat-box:hover {
@@ -396,17 +402,18 @@ html, body {
     text-align: center;
     cursor: pointer;
     transition: all 0.3s;
-    background: var(--light-bg);
+    background: #1a1f3a;
+    color: var(--text-dark);
 }
 
 .file-upload-area:hover {
     border-color: var(--primary-color);
-    background: rgba(102, 126, 234, 0.05);
+    background: rgba(15, 52, 96, 0.1);
 }
 
 .file-upload-area.dragover {
     border-color: var(--primary-color);
-    background: rgba(102, 126, 234, 0.1);
+    background: rgba(15, 52, 96, 0.2);
 }
 
 .file-upload-icon {
@@ -442,12 +449,13 @@ html, body {
 }
 
 .modal-content {
-    background-color: white;
+    background-color: #1a1f3a;
     padding: 2rem;
     border-radius: 12px;
     width: 90%;
     max-width: 500px;
     box-shadow: var(--shadow-lg);
+    color: var(--text-dark);
 }
 
 .modal-header {
