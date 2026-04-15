@@ -16,9 +16,22 @@
                 AI Attendance System
             </div>
             <ul class="navbar-menu">
-                <li><a href="/">Home</a></li>
-                <li><a href="/dashboard">Dashboard</a></li>
-                <li><a href="/register">Register</a></li>
+                <li><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+                <li><a href="{{ url_for('camera.webcam_page') }}">Webcam</a></li>
+                <li><a href="{{ url_for('camera.ipcam_page') }}">IP Camera</a></li>
+                <li><a href="{{ url_for('upload.upload_page') }}">Upload</a></li>
+                <li><a href="{{ url_for('main.register') }}">Register</a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle">
+                        <i class="fas fa-user"></i>
+                        {{ current_user.username }}
+                        <i class="fas fa-chevron-down"></i>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="#" onclick="showProfile()"><i class="fas fa-id-card"></i> Profile</a></li>
+                        <li><a href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                    </ul>
+                </li>
             </ul>
         </div>
     </nav>
@@ -84,6 +97,48 @@
                 <i class="fas fa-percentage" style="font-size: 2rem; color: var(--secondary-color);"></i>
                 <div class="stat-number" id="presentPercentage">0%</div>
                 <div class="stat-label">Present Rate</div>
+            </div>
+        </div>
+
+        <!-- User Profile Section -->
+        <div class="card" id="profileSection" style="margin-bottom: 2rem; display: none;">
+            <div class="card-header">
+                <h3><i class="fas fa-user"></i> User Profile</h3>
+            </div>
+            <div class="card-body">
+                <div class="grid grid-2">
+                    <div class="profile-info">
+                        <div class="profile-avatar">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <div class="profile-details">
+                            <h4>{{ current_user.full_name or current_user.username }}</h4>
+                            <p><strong>Username:</strong> {{ current_user.username }}</p>
+                            <p><strong>Email:</strong> {{ current_user.email }}</p>
+                            <p><strong>Role:</strong> {{ current_user.role.title() }}</p>
+                            <p><strong>Member since:</strong> <span id="memberSince">Loading...</span></p>
+                        </div>
+                    </div>
+                    <div class="profile-stats">
+                        <h4>Quick Stats</h4>
+                        <div class="stat-grid">
+                            <div class="mini-stat">
+                                <i class="fas fa-calendar-check"></i>
+                                <div>
+                                    <div class="mini-stat-number" id="userAttendanceCount">0</div>
+                                    <div class="mini-stat-label">Your Attendance</div>
+                                </div>
+                            </div>
+                            <div class="mini-stat">
+                                <i class="fas fa-clock"></i>
+                                <div>
+                                    <div class="mini-stat-number" id="lastAttendance">Never</div>
+                                    <div class="mini-stat-label">Last Check-in</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -268,6 +323,50 @@
 
         // Auto-refresh every 30 seconds
         setInterval(loadAttendanceData, 30000);
+
+        // Profile functionality
+        function showProfile() {
+            const profileSection = document.getElementById('profileSection');
+            profileSection.style.display = profileSection.style.display === 'none' ? 'block' : 'none';
+
+            if (profileSection.style.display === 'block') {
+                loadUserStats();
+            }
+        }
+
+        async function loadUserStats() {
+            try {
+                // Load user registration date (simplified - you might want to store this in user data)
+                const memberSince = new Date().toLocaleDateString(); // Placeholder
+                document.getElementById('memberSince').textContent = memberSince;
+
+                // Load user's attendance count from today's records
+                const response = await fetch('/admin/today-attendance');
+                const data = await response.json();
+
+                // Count user's attendance (simplified - assuming current user matches person name)
+                const userAttendance = data.records.filter(record =>
+                    record.Person_Name === '{{ current_user.username }}' ||
+                    record.Person_Name === '{{ current_user.full_name }}'
+                ).length;
+
+                document.getElementById('userAttendanceCount').textContent = userAttendance;
+
+                // Find last attendance time
+                const userRecords = data.records.filter(record =>
+                    record.Person_Name === '{{ current_user.username }}' ||
+                    record.Person_Name === '{{ current_user.full_name }}'
+                );
+
+                if (userRecords.length > 0) {
+                    const lastRecord = userRecords[userRecords.length - 1];
+                    document.getElementById('lastAttendance').textContent = `${lastRecord.Date} ${lastRecord.Time}`;
+                }
+
+            } catch (error) {
+                console.error('Error loading user stats:', error);
+            }
+        }
     </script>
 </body>
 </html>

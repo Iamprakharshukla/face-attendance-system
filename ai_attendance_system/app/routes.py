@@ -1,7 +1,8 @@
 import os
 import cv2
 import numpy as np
-from flask import Blueprint, render_template, request, jsonify, send_file, Response
+from flask import Blueprint, render_template, request, jsonify, send_file, Response, redirect, url_for, flash
+from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
 from datetime import datetime
 import logging
@@ -16,6 +17,7 @@ from utils.file_utils import (
     allowed_file, save_uploaded_file, extract_frames_from_video,
     get_video_properties, cleanup_upload_folder
 )
+from utils.user_manager import user_manager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -26,6 +28,7 @@ camera_bp = Blueprint('camera', __name__, url_prefix='/camera')
 upload_bp = Blueprint('upload', __name__, url_prefix='/upload')
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 email_bp = Blueprint('email', __name__, url_prefix='/email')
+auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
 # Initialize modules
 face_engine = FaceRecognitionEngine(EMBEDDINGS_FOLDER, FACE_DISTANCE_THRESHOLD)
@@ -42,11 +45,14 @@ frame_lock = threading.Lock()
 
 @main_bp.route('/')
 def index():
-    """Home page"""
-    return render_template('index.html')
+    """Root route - redirect to dashboard if logged in, login if not"""
+    if current_user.is_authenticated:
+        return redirect(url_for('main.dashboard'))
+    return redirect(url_for('auth.login'))
 
 
 @main_bp.route('/dashboard')
+@login_required
 def dashboard():
     """Dashboard page"""
     today_attendance = csv_handler.get_all_attendance_today()
@@ -54,10 +60,12 @@ def dashboard():
     
     return render_template('dashboard.html', 
                          attendance=today_attendance,
-                         known_people=known_people)
+                         known_people=known_people,
+                         user=current_user)
 
 
 @main_bp.route('/register')
+@login_required
 def register():
     """Registration page"""
     return render_template('register.html')
@@ -66,12 +74,14 @@ def register():
 # ==================== CAMERA ROUTES ====================
 
 @camera_bp.route('/webcam')
+@login_required
 def webcam_page():
     """Webcam page"""
     return render_template('camera/webcam.html')
 
 
 @camera_bp.route('/ipcam')
+@login_required
 def ipcam_page():
     """IP Camera page"""
     return render_template('camera/ipcam.html')
@@ -211,6 +221,7 @@ def generate_ip_frames(ip_url):
 # ==================== UPLOAD ROUTES ====================
 
 @upload_bp.route('/')
+@login_required
 def upload_page():
     """Upload page"""
     return render_template('upload.html')
@@ -314,6 +325,7 @@ def upload_video():
 # ==================== ADMIN ROUTES ====================
 
 @admin_bp.route('/known-people')
+@login_required
 def get_known_people():
     """Get list of all known people"""
     known_people = face_engine.get_all_known_people()
@@ -321,6 +333,7 @@ def get_known_people():
 
 
 @admin_bp.route('/today-attendance')
+@login_required
 def get_today_attendance():
     """Get today's attendance records"""
     records = csv_handler.get_all_attendance_today()
@@ -328,6 +341,7 @@ def get_today_attendance():
 
 
 @admin_bp.route('/attendance-report')
+@login_required
 def get_attendance_report():
     """Get attendance report for date range"""
     start_date_str = request.args.get('start_date')
@@ -345,6 +359,7 @@ def get_attendance_report():
 
 
 @admin_bp.route('/export-attendance')
+@login_required
 def export_attendance():
     """Export attendance CSV"""
     try:
@@ -356,6 +371,7 @@ def export_attendance():
 
 
 @admin_bp.route('/export-unknown-faces')
+@login_required
 def export_unknown_faces():
     """Export unknown faces CSV"""
     try:
@@ -415,3 +431,74 @@ def send_unknown_alert():
             return jsonify({'error': 'Failed to send alert'}), 500
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+# ==================== AUTH ROUTES ====================
+
+@auth_bp.route('/login', methods=['GET', 'POST'])
+def login():
+    """Login page"""
+    if current_user.is_authenticated:
+        return redirect(url_for('main.dashboard'))
+
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        if not username or not password:
+            flash('Please provide both username and password.', 'error')
+            return redirect(url_for('auth.login'))
+
+        user = user_manager.authenticate(username, password)
+        if user:
+            login_user(user, remember=True)
+            next_page = request.args.get('next')
+            return redirect(next_page or url_for('main.dashboard'))
+        else:
+            flash('Invalid username or password.', 'error')
+
+    return render_template('auth/login.html')
+
+
+@auth_bp.route('/register', methods=['GET', 'POST'])
+def register():
+    """Registration page"""
+    if current_user.is_authenticated:
+        return redirect(url_for('main.dashboard'))
+
+    if request.method == 'POST':
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+        full_name = request.form.get('full_name', '')
+
+        if not all([username, email, password, confirm_password]):
+            flash('All fields are required.', 'error')
+            return redirect(url_for('auth.register'))
+
+        if password != confirm_password:
+            flash('Passwords do not match.', 'error')
+            return redirect(url_for('auth.register'))
+
+        if len(password) < 6:
+            flash('Password must be at least 6 characters long.', 'error')
+            return redirect(url_for('auth.register'))
+
+        try:
+            user = user_manager.create_user(username, email, password, full_name)
+            flash('Registration successful! Please log in.', 'success')
+            return redirect(url_for('auth.login'))
+        except ValueError as e:
+            flash(str(e), 'error')
+
+    return render_template('auth/register.html')
+
+
+@auth_bp.route('/logout')
+@login_required
+def logout():
+    """Logout user"""
+    logout_user()
+    flash('You have been logged out.', 'info')
+    return redirect(url_for('auth.login'))

@@ -1,0 +1,10 @@
+{
+  "1": {
+    "id": "1",
+    "username": "PRAKHAR",
+    "email": "PRAKHARSHUKLA297@GMAIL.COM",
+    "password_hash": "scrypt:32768:8:1$mkUsE9210FiiFFQd$62c0c91cd938089dad56d137587925a11f918b5a7ddd80d0b4cb6a2b86c5a793c6803996431c0dfc3c39aa3c33e582991a8f35f5b75dd2b121dfe7fb1558af86",
+    "full_name": "Prakhar Shukla",
+    "role": "user"
+  }
+}

@@ -42,6 +42,11 @@ SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
 
+# Flask-Login Configuration
+LOGIN_VIEW = 'auth.login'
+LOGIN_MESSAGE = 'Please log in to access this page.'
+LOGIN_MESSAGE_CATEGORY = 'info'
+
 # Logging Configuration
 LOG_FILE = os.path.join(BASE_DIR, 'attendance_system.log')
 LOG_LEVEL = 'INFO'

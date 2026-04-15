@@ -14,11 +14,17 @@ A cutting-edge, AI-powered attendance tracking system that leverages advanced fa
 - **Multi-modal Support**: Webcam streams, IP cameras, photo uploads, and video processing
 - **Confidence Scoring**: Adjustable distance thresholds for recognition accuracy
 
+### � User Authentication
+- **Secure Login/Logout**: User session management with Flask-Login
+- **User Registration**: Create accounts with email verification
+- **Profile Management**: View personal attendance statistics
+- **Role-based Access**: Admin and user role differentiation
+
 ### 📊 Analytics & Reporting
 - **Automated Attendance**: CSV-based logging with timestamp tracking
 - **Interactive Dashboard**: Real-time attendance visualization and analytics
+- **User Profiles**: Personal attendance history and statistics
 - **Email Reports**: Automated daily/weekly reports via SMTP integration
-- **Data Export**: CSV reports with detailed attendance records
 
 ### 🖥️ User Interface
 - **Modern Web Design**: Responsive HTML5/CSS3 interface with intuitive navigation
@@ -135,12 +141,17 @@ python run.py
 
 The application will start on `http://localhost:5000`
 
+### User Authentication
+1. **Register**: Create a new account with username, email, and password
+2. **Login**: Sign in with your credentials - redirects directly to dashboard
+3. **Dashboard**: Access all attendance features and view your profile
+
 ### Core Workflows
 
 #### 1. User Registration
-- Navigate to the **Register** page
-- Upload multiple photos or use webcam capture
-- System generates face encodings for recognition
+- Navigate to the registration page
+- Provide username, email, and password
+- Account is created and you can log in
 
 #### 2. Real-time Attendance
 - **Webcam Mode**: Direct camera access for live recognition
@@ -149,6 +160,7 @@ The application will start on `http://localhost:5000`
 
 #### 3. Dashboard & Reports
 - View attendance analytics and statistics
+- Access your personal profile with attendance history
 - Export CSV reports
 - Configure automated email delivery
 
@@ -164,29 +176,29 @@ face-attendance-system/
 │
 ├── ai_attendance_system/          # Main application directory
 │   ├── app/                       # Flask application package
-│   │   ├── __init__.py           # Application factory
-│   │   ├── routes.py             # URL routing and handlers
+│   │   ├── __init__.py           # Application factory with Flask-Login
+│   │   ├── routes.py             # URL routing with auth routes
 │   │   ├── templates/            # HTML templates
-│   │   │   ├── index.html
-│   │   │   ├── camera.html
-│   │   │   ├── upload.html
-│   │   │   ├── register.html
-│   │   │   ├── dashboard.html
-│   │   │   └── email_config.html
+│   │   │   ├── dashboard.html    # Main dashboard with user profile
+│   │   │   ├── auth/             # Authentication templates
+│   │   │   │   ├── login.html
+│   │   │   │   └── register.html
+│   │   │   └── ...
 │   │   └── static/               # Static assets
 │   │       ├── css/
-│   │       │   └── styles.css
-│   │       ├── images/
-│   │       └── video/
+│   │       │   └── styles.css    # Updated with auth styles
+│   │       └── images/
 │   │
 │   ├── utils/                    # Utility modules
 │   │   ├── face_recognition_engine.py
 │   │   ├── csv_handler.py
 │   │   ├── email_handler.py
 │   │   ├── file_utils.py
+│   │   ├── user_manager.py       # NEW: User authentication
 │   │   └── generic_utilities.py
 │   │
-│   ├── data/                     # Generated data and encodings
+│   ├── data/                     # Generated data and user files
+│   │   └── users.json            # User accounts storage
 │   ├── logs/                     # Application logs
 │   ├── run.py                    # Application entry point
 │   └── .env                      # Environment configuration

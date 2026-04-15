@@ -1,0 +1,10 @@
+{
+  "1": {
+    "id": "1",
+    "username": "mridul chakka",
+    "email": "mridul.meetha@gmail.com",
+    "password_hash": "scrypt:32768:8:1$C8E2nufGaLvHebvm$0d14df9131e742bc451e8fa7fde7ded5ab1d5869f84a9b07bc7420b128c7371f61e6064a886f6188c09edfa854a45da9fb920adc57f790b41315fcd449ebf076",
+    "full_name": "Mridul Upadhyaya",
+    "role": "user"
+  }
+}
