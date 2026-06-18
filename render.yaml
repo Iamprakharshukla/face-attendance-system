@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: face-attendance-system
+    runtime: docker
+    repo: https://github.com/Iamprakharshukla/face-attendance-system
+    branch: main
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: SECRET_KEY
+        value: face-attendance-super-secret-key-2024
+      - key: MAIL_SERVER
+        value: smtp.gmail.com
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_USE_TLS
+        value: "True"
+      - key: MAIL_USERNAME
+        value: 08prince999@gmail.com
+      - key: MAIL_PASSWORD
+        value: vztxtmrrpgrxedmo
+      - key: MAIL_DEFAULT_SENDER
+        value: 08prince999@gmail.com
+      - key: LOG_LEVEL
+        value: INFO
+      - key: PORT
+        value: "5001"
