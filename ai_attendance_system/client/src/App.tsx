@@ -34,6 +34,9 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 
+// API base URL - empty for Flask dev, set to Render URL for Vercel deployment
+const API_BASE = import.meta.env.VITE_API_BASE || '';
+
 interface AttendanceRecord {
   Date: string;
   Time: string;
@@ -104,7 +107,7 @@ export default function App() {
   // Fetch Attendance Records
   const fetchTodayAttendance = async () => {
     try {
-      const res = await fetch('/admin/today-attendance');
+      const res = await fetch(`${API_BASE}/admin/today-attendance`);
       const data = await res.json();
       if (data.records) {
         setRecords(data.records);
@@ -132,7 +135,7 @@ export default function App() {
   // Filter Search
   const handleSearch = async () => {
     try {
-      const res = await fetch(`/admin/attendance-report?start_date=${startDate}&end_date=${endDate}`);
+      const res = await fetch(`${API_BASE}/admin/attendance-report?start_date=${startDate}&end_date=${endDate}`);
       const data = await res.json();
       if (data.records) {
         setRecords(data.records);
@@ -145,7 +148,7 @@ export default function App() {
 
   // Export CSV
   const handleExportCSV = (type: 'attendance' | 'unknown') => {
-    window.location.href = `/admin/export-${type === 'attendance' ? 'attendance' : 'unknown-faces'}`;
+    window.location.href = `${API_BASE}/admin/export-${type === 'attendance' ? 'attendance' : 'unknown-faces'}`;
   };
 
   // Submit Email Report
@@ -154,7 +157,7 @@ export default function App() {
     if (!reportEmail) return;
     setRegisterStatus({ message: 'Sending email report...', type: 'info' });
     try {
-      const res = await fetch('/email/send-report', {
+      const res = await fetch(`${API_BASE}/email/send-report`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: reportEmail, include_csv: includeCSV })
@@ -197,7 +200,7 @@ export default function App() {
     setRegisterStatus({ message: 'Uploading and processing face image...', type: 'info' });
 
     try {
-      const res = await fetch('/upload/photo', {
+      const res = await fetch(`${API_BASE}/upload/photo`, {
         method: 'POST',
         body: formData
       });
@@ -237,7 +240,7 @@ export default function App() {
     setRegisterStatus({ message: 'Uploading and analyzing video. This might take a moment...', type: 'info' });
 
     try {
-      const res = await fetch('/upload/video', {
+      const res = await fetch(`${API_BASE}/upload/video`, {
         method: 'POST',
         body: formData
       });
@@ -261,7 +264,7 @@ export default function App() {
     if (webcamActive || ipActive) {
       statsInterval = setInterval(async () => {
         try {
-          const res = await fetch('/camera/stream-stats');
+          const res = await fetch(`${API_BASE}/camera/stream-stats`);
           const data = await res.json();
           setStreamStats(data);
         } catch (err) {
@@ -274,7 +277,7 @@ export default function App() {
 
   const toggleWebcam = async () => {
     if (webcamActive) {
-      await fetch('/camera/stop-stream', { method: 'POST' });
+      await fetch(`${API_BASE}/camera/stop-stream`, { method: 'POST' });
       setWebcamActive(false);
     } else {
       setWebcamActive(true);
@@ -284,7 +287,7 @@ export default function App() {
 
   const toggleIpCam = async () => {
     if (ipActive) {
-      await fetch('/camera/stop-stream', { method: 'POST' });
+      await fetch(`${API_BASE}/camera/stop-stream`, { method: 'POST' });
       setIpActive(false);
     } else {
       if (!ipUrl) {
@@ -721,7 +724,7 @@ export default function App() {
                 <div className="w-full flex-1 rounded-2xl overflow-hidden bg-slate-900 border dark:border-white/5 border-slate-200/80 shadow-inner flex items-center justify-center min-h-[300px]">
                   {webcamActive ? (
                     <img 
-                      src="/camera/stream" 
+                      src={`${API_BASE}/camera/stream`} 
                       alt="Webcam Live Stream" 
                       className="w-full h-full object-cover" 
                       onError={() => {
@@ -808,7 +811,7 @@ export default function App() {
                 <div className="w-full flex-1 rounded-2xl overflow-hidden bg-slate-900 border dark:border-white/5 border-slate-200/80 shadow-inner flex items-center justify-center min-h-[300px]">
                   {ipActive ? (
                     <img 
-                      src={`/camera/ip-stream-display/${encodeURIComponent(ipUrl)}`} 
+                      src={`${API_BASE}/camera/ip-stream-display/${encodeURIComponent(ipUrl)}`} 
                       alt="IP Live Stream" 
                       className="w-full h-full object-cover" 
                       onError={() => {

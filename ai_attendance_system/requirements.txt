@@ -1,6 +1,7 @@
 Flask
 Werkzeug
 Flask-Login
+Flask-Cors
 face-recognition
 opencv-python
 numpy

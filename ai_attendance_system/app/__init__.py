@@ -1,5 +1,6 @@
 from flask import Flask
 from flask_login import LoginManager
+from flask_cors import CORS
 from config import *
 from utils.user_manager import user_manager
 
@@ -14,6 +15,9 @@ def create_app():
     """Application factory"""
     app = Flask(__name__)
     app.config.from_object('config')
+
+    # Enable CORS for cross-origin requests (Vercel frontend -> Render backend)
+    CORS(app, supports_credentials=True, origins=["*"])
 
     # Initialize extensions
     login_manager.init_app(app)

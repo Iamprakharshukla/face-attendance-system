@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build && node -e \"require('fs').copyFileSync('../app/static/dist/index.html', '../app/templates/dashboard.html')\"",
+    "build:vercel": "tsc -b && vite build --mode vercel",
     "lint": "eslint .",
     "preview": "vite preview"
   },

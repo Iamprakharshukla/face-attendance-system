@@ -179,3 +179,4 @@ desktop.ini
 # Temporary media assets
 /ai_attendance_system/client/dist/
 /ai_attendance_system/client/out/
+.vercel

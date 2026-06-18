@@ -1,0 +1,5 @@
+{
+  "buildCommand": "cd ai_attendance_system/client && npm install && npm run build:vercel",
+  "outputDirectory": "ai_attendance_system/client/dist",
+  "framework": null
+}
