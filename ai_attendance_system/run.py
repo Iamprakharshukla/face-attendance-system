@@ -5,7 +5,7 @@ import os
 import sys
 
 from dotenv import load_dotenv
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'), override=True)
 # Add parent directory to path
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
@@ -22,3 +22,4 @@ if __name__ == '__main__':
         debug=True,
         threaded=True
     )
+# Reload triggered

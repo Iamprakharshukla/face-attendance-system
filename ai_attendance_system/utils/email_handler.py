@@ -45,16 +45,14 @@ class EmailHandler:
                 self._attach_file(msg, csv_file_path)
             
             # Send email
-            server = smtplib.SMTP(self.mail_server, self.mail_port)
-            server.starttls()
-            server.login(self.mail_username, self.mail_password)
+            server = self._connect_smtp()
             server.send_message(msg)
             server.quit()
             
             logger.info(f"Report sent to {recipient_email}")
             return True
         except Exception as e:
-            logger.error(f"Error sending email: {str(e)}")
+            logger.error(f"Error sending email: {str(e)}", exc_info=True)
             return False
     
     def send_unknown_faces_alert(self, recipient_email, unknown_faces_count):
@@ -80,17 +78,26 @@ class EmailHandler:
             """
             msg.attach(MIMEText(body, 'html'))
             
-            server = smtplib.SMTP(self.mail_server, self.mail_port)
-            server.starttls()
-            server.login(self.mail_username, self.mail_password)
+            server = self._connect_smtp()
             server.send_message(msg)
             server.quit()
             
             logger.info(f"Alert sent to {recipient_email}")
             return True
         except Exception as e:
-            logger.error(f"Error sending alert: {str(e)}")
+            logger.error(f"Error sending alert: {str(e)}", exc_info=True)
             return False
+
+    def _connect_smtp(self):
+        """Connect to SMTP server using appropriate port and protocol (SSL/TLS)"""
+        if self.mail_port == 465:
+            server = smtplib.SMTP_SSL(self.mail_server, self.mail_port)
+        else:
+            server = smtplib.SMTP(self.mail_server, self.mail_port)
+            server.starttls()
+        
+        server.login(self.mail_username, self.mail_password)
+        return server
     
     def _create_report_body(self, report_data):
         """Create HTML email body for report"""

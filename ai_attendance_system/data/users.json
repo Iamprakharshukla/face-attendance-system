@@ -6,5 +6,29 @@
     "password_hash": "scrypt:32768:8:1$mkUsE9210FiiFFQd$62c0c91cd938089dad56d137587925a11f918b5a7ddd80d0b4cb6a2b86c5a793c6803996431c0dfc3c39aa3c33e582991a8f35f5b75dd2b121dfe7fb1558af86",
     "full_name": "Prakhar Shukla",
     "role": "user"
+  },
+  "2": {
+    "id": "2",
+    "username": "prakhar",
+    "email": "prakhar.pdt@gmail.com",
+    "password_hash": "scrypt:32768:8:1$re4LB69CJKDdMa3T$5747f417fb63eb25e8ed1211dbfbb11e3779fe643b5ed6de368c2473d9f20272343567b225a1032ce11216fdeda6dbfc3c8a00de62843096f5307216e2bae24e",
+    "full_name": "",
+    "role": "user"
+  },
+  "3": {
+    "id": "3",
+    "username": "prakhar297",
+    "email": "prakharshukla297@gmail.com",
+    "password_hash": "scrypt:32768:8:1$qbQVdkJ0Tfp9FWAj$233f6c33faf8db6531599091e0cef81b9a41eedfc4b7490ed3ac2ffa2090cd9225b87b361e8a3887cf7a7be4a4b997ca53a590dc92a4399373b90f30ad0d29c8",
+    "full_name": "Prakhar Shukla",
+    "role": "user"
+  },
+  "4": {
+    "id": "4",
+    "username": "admin",
+    "email": "admin@example.com",
+    "password_hash": "scrypt:32768:8:1$dgcQSzFg2VJIH6p3$bac58b6d0d88cd98000040d0ca78da3e6d72718b681d7a1651fb362f5c25be6c1cbbf8df369880400d201a00b7ca39594f01182c21ed3feb47b73e4b07735746",
+    "full_name": "Admin User",
+    "role": "user"
   }
 }

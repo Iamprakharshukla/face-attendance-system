@@ -1,0 +1,181 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+#  Usually these files are written by a python script run within a local paths
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nosexyproject
+.nofiles
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.stats
+.pytest_cache/
+.hypothesis/
+.ruamel-yaml-clib/
+
+# Translations
+*.mo
+*.gmo
+
+# Django stuff:
+#  None in this project
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
+#   However, if you're executing a python package, it can be excluded.
+#Pipfile.lock
+
+# poetry
+#   poetry.lock is usually tracked, but virtualenv is not
+.venv
+poetry.lock
+
+# pdm
+.pdm.toml
+.pdm-plugins/
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parses
+*.sage.py
+
+# Environments
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.production
+.env.development
+.env.staging
+
+# Virtual Environments
+venv/
+ENV/
+env/
+.venv/
+conda-env/
+anaconda-env/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# Node.js dependencies (React Client)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+package-lock.json
+
+# Vite / React Build output
+/ai_attendance_system/app/static/dist/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS files
+.DS_Store
+.DS_Store?
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Project Data and Databases
+/ai_attendance_system/data/uploads/*
+!/ai_attendance_system/data/uploads/.gitkeep
+/ai_attendance_system/data/embeddings/*.pkl
+/ai_attendance_system/data/attendance_records/*.csv
+/ai_attendance_system/attendance_system.log
+
+# Temporary media assets
+/ai_attendance_system/client/dist/
+/ai_attendance_system/client/out/

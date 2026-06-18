@@ -81,7 +81,7 @@ def dashboard():
 @login_required
 def register():
     """Registration page"""
-    return render_template('register.html')
+    return redirect(url_for('main.dashboard'))
 
 
 # ==================== CAMERA ROUTES ====================
@@ -90,14 +90,14 @@ def register():
 @login_required
 def webcam_page():
     """Webcam page"""
-    return render_template('camera/webcam.html')
+    return redirect(url_for('main.dashboard'))
 
 
 @camera_bp.route('/ipcam')
 @login_required
 def ipcam_page():
     """IP Camera page"""
-    return render_template('camera/ipcam.html')
+    return redirect(url_for('main.dashboard'))
 
 
 @camera_bp.route('/stream')
@@ -363,7 +363,7 @@ def generate_ip_frames(ip_url):
 @login_required
 def upload_page():
     """Upload page"""
-    return render_template('upload.html')
+    return redirect(url_for('main.dashboard'))
 
 
 @upload_bp.route('/photo', methods=['POST'])

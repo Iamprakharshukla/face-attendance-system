@@ -20,6 +20,7 @@ class CSVHandler:
         self.unknown_faces_csv = unknown_faces_csv
         self.known_faces_csv = known_faces_csv
         self._ensure_files_exist()
+        self._initialize_cache()
     
     def _ensure_files_exist(self):
         """Create CSV files if they don't exist"""
@@ -43,28 +44,38 @@ class CSVHandler:
                 writer = csv.writer(f)
                 writer.writerow(['Person_Name', 'Registration_Date', 'Total_Attendance', 'Last_Seen'])
     
+    def _initialize_cache(self):
+        """Initialize in-memory attendance cache with today's logged names to prevent duplicates"""
+        global _attendance_cache
+        try:
+            today = datetime.now().strftime('%Y-%m-%d')
+            if not os.path.exists(self.attendance_csv):
+                return
+            with open(self.attendance_csv, 'r', newline='') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    if row['Date'] == today:
+                        _attendance_cache[row['Person_Name']] = today
+        except Exception as e:
+            logger.error(f"Error initializing cache: {str(e)}")
+
     def log_attendance(self, person_name, confidence, source='webcam', dedup_interval=60):
         """
-        Log attendance record with deduplication to prevent duplicate logging
-        dedup_interval: seconds to wait before logging the same person again (default 60)
+        Log attendance record with deduplication to prevent duplicate logging (max once per day per person)
         """
         global _attendance_cache
         
         try:
             now = datetime.now()
+            today_str = now.strftime('%Y-%m-%d')
             
-            # Check if person was logged recently
-            cache_key = f"{person_name}_{source}"
-            if cache_key in _attendance_cache:
-                last_logged = _attendance_cache[cache_key]
-                time_diff = (now - last_logged).total_seconds()
-                
-                if time_diff < dedup_interval:
-                    logger.debug(f"Skipped duplicate attendance for {person_name} (logged {time_diff:.0f}s ago)")
-                    return True  # Return True but don't log
+            # Check if person was already logged today in memory cache to avoid heavy file reads
+            if _attendance_cache.get(person_name) == today_str:
+                logger.debug(f"Skipped duplicate daily attendance for {person_name} (already logged today)")
+                return True  # Return True but don't log duplicate
             
             # Log the attendance
-            date = now.strftime('%Y-%m-%d')
+            date = today_str
             time = now.strftime('%H:%M:%S')
             status = 'Present'
             
@@ -73,7 +84,7 @@ class CSVHandler:
                 writer.writerow([date, time, person_name, f'{confidence:.4f}', status, source])
             
             # Update cache
-            _attendance_cache[cache_key] = now
+            _attendance_cache[person_name] = today_str
             
             logger.info(f"Logged attendance for {person_name} (confidence: {confidence:.2f})")
             return True
@@ -130,11 +141,12 @@ class CSVHandler:
     
     def update_person_record(self, person_name):
         """
-        Update person's last seen time and attendance count
+        Update person's last seen time and attendance count (max once per day)
         """
         try:
             rows = []
             updated = False
+            today_str = datetime.now().strftime('%Y-%m-%d')
             
             with open(self.known_faces_csv, 'r', newline='') as f:
                 reader = csv.reader(f)
@@ -142,8 +154,10 @@ class CSVHandler:
                 
                 for row in reader:
                     if row[0] == person_name:
-                        row[2] = str(int(row[2]) + 1)  # Increment attendance
-                        row[3] = datetime.now().strftime('%Y-%m-%d')  # Update last seen
+                        # Increment attendance if last seen date is not today, OR if attendance count is 0 (registration day first seen)
+                        if row[3] != today_str or row[2] == '0':
+                            row[2] = str(int(row[2]) + 1)
+                        row[3] = today_str  # Update last seen to today
                         updated = True
                     rows.append(row)
             
